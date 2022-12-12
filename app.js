@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const {
-  models: { User },
+  models: { User, Note },
 } = require("./db");
 const path = require("path");
 const env = require("dotenv").config();
@@ -23,6 +23,19 @@ app.post("/api/auth", async (req, res, next) => {
 app.get("/api/auth", async (req, res, next) => {
   try {
     res.send(await User.byToken(req.headers.authorization));
+  } catch (ex) {
+    next(ex);
+  }
+});
+
+app.get("/api/users/:id/notes", async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    res.send(
+      await Note.findAll({
+        where: { userId: id },
+      })
+    );
   } catch (ex) {
     next(ex);
   }

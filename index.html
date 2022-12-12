@@ -41,6 +41,7 @@
 
       const App = () => {
         const [auth, setAuth] = React.useState({});
+        const [notes, setNotes] = React.useState([])
 
         const attemptTokenLogin = async () => {
           const token = window.localStorage.getItem('token');
@@ -51,8 +52,11 @@
               },
             });
             setAuth(auth);
+            const notes = await axios.get(`/api/users/${auth.id}/notes`)
+            setNotes(notes.data)
           }
         };
+
         React.useEffect(() => {
           attemptTokenLogin();
         }, []);
@@ -75,6 +79,11 @@
           <div>
             Welcome {auth.username}!
             <button onClick={logout}>Logout</button>
+              <div>
+                {notes.map((note) => {return (
+                  <p key={note.id}>{note.text}</p>
+                )})}
+              </div>
           </div>
         );
       };

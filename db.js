@@ -5,7 +5,8 @@ const config = {
 };
 const env = require("dotenv").config();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
+const { TEXT } = require("sequelize");
 
 if (process.env.LOGGING) {
   delete config.logging;
@@ -20,10 +21,20 @@ const User = conn.define("user", {
   password: STRING,
 });
 
+const Note = conn.define("note", {
+  text: TEXT,
+});
+
+Note.belongsTo(User);
+User.hasMany(Note);
+
 User.beforeCreate(async (user, options) => {
-    const hashedPassword = await bcrypt.hash(user.password, Number(process.env.SALT_VALUE))
-    user.password = hashedPassword
-})
+  const hashedPassword = await bcrypt.hash(
+    user.password,
+    Number(process.env.SALT_VALUE)
+  );
+  user.password = hashedPassword;
+});
 
 User.byToken = async (token) => {
   try {
@@ -43,17 +54,17 @@ User.byToken = async (token) => {
 };
 
 User.authenticate = async ({ username, password }) => {
-
   const user = await User.findOne({
     where: {
       username,
     },
   });
-  const matches = await bcrypt.compare(password, user.password)
-  if (user && matches) {
 
+  const matches = await bcrypt.compare(password, user.password);
+  if (user && matches) {
     return jwt.sign({ user }, process.env.JWT);
   }
+
   const error = Error("bad credentials");
   error.status = 401;
   throw error;
@@ -66,9 +77,20 @@ const syncAndSeed = async () => {
     { username: "moe", password: "moe_pw" },
     { username: "larry", password: "larry_pw" },
   ];
+  const notes = [
+    { text: "BLAHBLAHBLAHBLAHBLAHBLAH", userId: 1 },
+    { text: "Coding is Fun!!!", userId: 1 },
+    { text: "Note.belongsToOne is not a function", userId: 2 },
+    { text: "listening on port 8080", userId: 2 },
+    { text: "[nodemon] starting `node server.js`", userId: 3 },
+  ];
+
   const [lucy, moe, larry] = await Promise.all(
     credentials.map((credential) => User.create(credential))
   );
+
+  const notePromise = await Promise.all(notes.map((note) => Note.create(note)));
+
   return {
     users: {
       lucy,
@@ -82,5 +104,6 @@ module.exports = {
   syncAndSeed,
   models: {
     User,
+    Note,
   },
 };
