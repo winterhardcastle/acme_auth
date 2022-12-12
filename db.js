@@ -5,6 +5,7 @@ const config = {
 };
 const env = require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt")
 
 if (process.env.LOGGING) {
   delete config.logging;
@@ -18,6 +19,11 @@ const User = conn.define("user", {
   username: STRING,
   password: STRING,
 });
+
+User.beforeCreate(async (user, options) => {
+    const hashedPassword = await bcrypt.hash(user.password, Number(process.env.SALT_VALUE))
+    user.password = hashedPassword
+})
 
 User.byToken = async (token) => {
   try {
@@ -37,13 +43,15 @@ User.byToken = async (token) => {
 };
 
 User.authenticate = async ({ username, password }) => {
+
   const user = await User.findOne({
     where: {
       username,
-      password,
     },
   });
-  if (user) {
+  const matches = await bcrypt.compare(password, user.password)
+  if (user && matches) {
+
     return jwt.sign({ user }, process.env.JWT);
   }
   const error = Error("bad credentials");
