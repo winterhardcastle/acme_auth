@@ -31,6 +31,9 @@ app.get("/api/auth", async (req, res, next) => {
 app.get("/api/users/:id/notes", async (req, res, next) => {
   try {
     const id = req.params.id;
+    const { token }= req.headers;
+    const user = await User.byToken(token)
+    if (user.id != id) throw new Error("token does not match route")
     res.send(
       await Note.findAll({
         where: { userId: id },
