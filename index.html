@@ -52,8 +52,7 @@
               },
             });
             setAuth(auth);
-            
-            const notes = await axios.get(`/api/users/${auth.id}/notes`, {headers: {token: token}})
+            const notes = await axios.get(`/api/users/${auth.id}/notes`, {headers: {authorization: token}})
             setNotes(notes.data)
           }
         };
@@ -69,8 +68,8 @@
 
         const signIn = async (credentials) => {
           const response = await axios.post('/api/auth', credentials);
-          const { token } = response.data;
-          window.localStorage.setItem('token', token);
+          const { authorization } = response.data;
+          window.localStorage.setItem('token', authorization);
           attemptTokenLogin();
         };
 
